@@ -1,5 +1,6 @@
 import requests
 from requests.auth import HTTPBasicAuth
+import markdown
 from config import *
 
 def update_confluence(summary_text):
@@ -13,14 +14,15 @@ def update_confluence(summary_text):
     current_version = page["version"]["number"]
     title = page["title"]
 
+    # Convert Markdown to HTML
+    html_summary = markdown.markdown(summary_text)
+
+    # Wrap in clean Confluence-compatible div
     new_body = f"""
-    <p>🧠 <b>Latest notebook summary (auto-updated):</b></p>
-    <ac:structured-macro ac:name="code">
-      <ac:plain-text-body><![CDATA[
-{summary_text}
-      ]]></ac:plain-text-body>
-    </ac:structured-macro>
+    <p>📝 <b>Latest summary (auto-updated):</b></p>
+    <div>{html_summary}</div>
     """
+
 
     update_payload = {
         "version": {"number": current_version + 1},
