@@ -1,112 +1,74 @@
 
 # 🧠 Agentic AI Notebook Auto-Documentation System
 
-This project is a fully automated system that listens for notebook changes in a GitHub repository and pushes AI-generated summaries to Confluence — and now also sends an email notification after a successful update!
+This project listens for Jupyter/Databricks notebook updates in GitHub and automatically summarizes them using AI, updates a Confluence page, and sends an email notification.
 
 ---
 
 ## 🚀 Overview
 
 - **Trigger**: GitHub push to `AgenticPOC` repo
-- **Automation Host**: Flask server running in `AgenticServer` repo
-- **Processing**:
-  - Pulls updated notebooks locally
-  - Summarizes code with DeepSeek LLM
-  - Converts to clean HTML with headings, bullet points, and icons
-  - Pushes the output to Confluence via REST API
-  - 📧 Sends an email notification with the Confluence page link
+- **Automation Host**: Flask server in `AgenticServer` repo
+- **Flow**:
+  - Pulls updated notebooks
+  - Summarizes using DeepSeek LLM
+  - Converts to formatted HTML
+  - Pushes to Confluence
+  - Sends email notification
+  - Uses `ngrok` for webhook testing if needed
 
 ---
 
 ## 📁 Repositories
 
-- `AgenticPOC`: Contains your Jupyter/Databricks notebooks
-- `AgenticServer`: Contains the Flask app that receives webhook events, summarizes notebooks, and updates Confluence + sends emails
+- `AgenticPOC`: Notebook repository
+- `AgenticServer`: Flask automation server (this project)
 
 ---
 
-## 🔁 How It Works (Flow)
+## 🔁 How It Works
 
-1. **Push to GitHub**  
-   You push a `.ipynb` file to `AgenticPOC/main`.
-
-2. **GitHub Webhook Fires**  
-   GitHub sends a webhook to your Flask server in `AgenticServer`.
-
-3. **Webhook Received**  
-   The Flask server (`webhook_server.py`) receives the payload:
-   - Parses modified/added files
-   - Pulls the latest `AgenticPOC` repo locally
-   - Identifies changed notebooks
-
-4. **Notebook Summarization**  
-   - Each changed notebook is loaded from disk
-   - The source code is extracted and passed to DeepSeek API
-   - AI returns a structured summary with markdown formatting
-
-5. **HTML Conversion & Styling**  
-   - Markdown is converted to valid Confluence-compatible HTML
-   - Icons, headers, lists, and tip/info blocks are added
-   - GitHub commit URL is appended at the bottom
-
-6. **Push to Confluence**  
-   - Confluence REST API is used to create or update a page in the desired space
-
-7. **📧 Email Notification**  
-   - After a successful Confluence update, an email is sent with the notebook name and direct Confluence page link.
-
----
-
-## 🧱 Components
-
-### 📂 `webhook_server.py`
-- Flask app
-- Handles GitHub POST webhook
-- Pulls latest repo changes
-- Routes notebooks to summarizer and formatter
-
-### 📂 `notebook_utils.py`
-- Loads `.ipynb` files
-- Extracts code cells
-- Sends prompt to DeepSeek LLM
-- Returns structured markdown summary
-
-### 📂 `confluence_utils.py`
-- Converts markdown summary to Confluence HTML
-- Adds icons, TOC, info/tip blocks
-- Uses Confluence REST API to create/update a page
-- **Sends email** after update
-
----
-
-## ✅ Features
-
-- 🔗 GitHub Commit traceability
-- 📑 Confluence formatting: TOC, emojis, tip/info macros
-- 💬 Clean AI summaries using LLM
-- 📧 Email notifications after update
-- 🚫 File-not-found safety check
-- 🔄 Auto syncs local repo with GitHub pushes
+1. GitHub push triggers webhook
+2. Flask receives push payload
+3. Notebook code is summarized via LLM
+4. HTML is generated with clean formatting
+5. Page is updated or created in Confluence
+6. Email notification is sent
+7. Git commit link included
 
 ---
 
 ## 🛠️ Setup Instructions
 
-### 1. Clone `AgenticServer` repo
+### 1. Clone Both Repositories
 
-### 2. Create `.env` file with:
+```bash
+git clone https://github.com/yourusername/AgenticServer.git
+cd AgenticServer
+git clone https://github.com/yourusername/AgenticPOC.git
+```
+
+---
+
+### 2. Create a `.env` File
+
+Inside `AgenticServer/`, create a `.env` file:
 
 ```env
+# Git
 GITHUB_REPO_URL=https://github.com/yourusername/AgenticPOC.git
-CONFLUENCE_EMAIL=your_email@example.com
+
+# Confluence
+CONFLUENCE_EMAIL=you@example.com
 CONFLUENCE_API_TOKEN=base64_encoded_auth
 CONFLUENCE_BASE_URL=https://yourcompany.atlassian.net/wiki
 CONFLUENCE_SPACE_KEY=ABC
 
+# AI keys
 OPENAI_API_KEY=...
 DEEPSEEK_API_KEY=...
 
-# Email SMTP configuration
+# Email
 EMAIL_SENDER=you@gmail.com
 EMAIL_PASSWORD=your_app_password
 EMAIL_RECEIVER=you@gmail.com
@@ -114,42 +76,87 @@ SMTP_SERVER=smtp.gmail.com
 SMTP_PORT=587
 ```
 
-> ✅ Use [Gmail App Passwords](https://support.google.com/accounts/answer/185833) instead of your regular Gmail password
+---
 
-### 3. Clone `AgenticPOC` repo into same directory:
+### 3. Install Dependencies
+
 ```bash
-git clone https://github.com/yourusername/AgenticPOC.git
+pip install -r requirements.txt
 ```
 
-### 4. Start Flask app:
+---
+
+### 4. Start Flask Server
+
 ```bash
 python3 webhook_server.py
 ```
 
-### 5. Configure GitHub webhook:
-- Payload URL: `http://localhost:5050/webhook`
-- Content type: `application/json`
-- Events: `Just the push event`
+This starts the listener on `http://localhost:5050/webhook`
 
 ---
 
-## 📬 Output: Email Preview
+### 5. Expose Flask Server with ngrok (For GitHub Webhook)
 
-**Subject:** `📄 Notebook Summary Published: guess_the_word`  
-**Body:**
+#### ⬇️ Install ngrok:
+```bash
+brew install --cask ngrok  # macOS
+# or download manually from https://ngrok.com/download
 ```
+
+#### 🔐 Set auth token (once):
+```bash
+ngrok config add-authtoken <your_ngrok_token>
+```
+
+#### 🚀 Start tunnel:
+```bash
+ngrok http 5050
+```
+
+This gives you a public URL like:
+```
+https://abc123.ngrok.io → http://localhost:5050
+```
+
+---
+
+### 6. Configure GitHub Webhook
+
+- Go to your GitHub repo (`AgenticPOC`)
+- Settings → Webhooks → Add webhook
+- **Payload URL**: `https://abc123.ngrok.io/webhook`
+- **Content type**: `application/json`
+- **Trigger**: Just the push event
+- Save ✅
+
+---
+
+## 📬 Output
+
+### ✅ Email
+
+You’ll receive:
+```
+Subject: 📄 Notebook Summary Published: guess_the_word
+Body:
 ✅ The notebook *guess_the_word* has been summarized and published to Confluence.
-
-🔗 View it here: https://pratik03071995.atlassian.net/wiki/spaces/NBDOCS/overview?atl_f=PAGETREE
+🔗 View it here: [confluence link]
 ```
 
 ---
 
-## 📘 Contact
+## 💡 Tips
 
-Maintainer: **Pratik**  
-Email: pratik03071995@gmail.com  
-Client: **Personal**
+- If you use Gmail, enable **App Passwords**
+- Confluence pages will show Git commit links for traceability
+- Format includes TOC, emojis, structured lists
 
 ---
 
+## 📘 Maintainer
+
+**Pratik**   
+📫 pratik03071995@gmail.com
+
+---
