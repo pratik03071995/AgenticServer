@@ -17,10 +17,29 @@ def summarize_notebook(path):
 
         code_text = "\n".join(["".join(c) for c in code_cells])[:6000]
 
-        # Build the prompt
+        # Improved prompt to enforce structured, Confluence-friendly format
         prompt = f"""
-You are an AI summarizer. Please summarize the purpose and logic of this Databricks or Jupyter notebook in a clear and concise way for a technical Confluence audience:
+You are an AI assistant that generates clean, Confluence-ready summaries for Jupyter or Databricks notebooks.
 
+Structure the summary exactly like this:
+
+**Purpose:**
+- One sentence summary of the notebook’s goal
+
+**Key Logic & Steps:**
+1. Step description (no subheadings)
+2. Step description
+3. Step description
+
+**Technical Audience Notes:**
+- List key libraries and techniques used
+
+**Use Case:**
+- Where and how this notebook is useful
+
+✅ Do NOT include subheadings like **Step Title**. Use only bullet or numbered lines.
+
+Notebook content:
 {code_text}
 """
 

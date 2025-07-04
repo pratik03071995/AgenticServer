@@ -1,49 +1,48 @@
-import os
-import subprocess
 from flask import Flask, request, jsonify
 from threading import Thread
+import os, subprocess, json
 
-from config import GITHUB_REPO_URL, NOTEBOOK_PATH
+from config import GITHUB_REPO_URL
 from notebook_utils import summarize_notebook
-from confluence_utils import update_confluence
+from confluence_utils import create_or_update_page
 
 app = Flask(__name__)
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
+    payload = request.json
+
     def process_payload():
         try:
             print("📬 GitHub webhook received!")
 
-            # Pull the repo (clone or pull)
             repo_name = GITHUB_REPO_URL.split('/')[-1].replace('.git', '')
             if not os.path.exists(repo_name):
-                print(f"🔄 Cloning repo: {GITHUB_REPO_URL}")
                 subprocess.run(["git", "clone", GITHUB_REPO_URL])
             else:
-                print(f"🔁 Pulling latest changes in: {repo_name}")
                 subprocess.run(["git", "-C", repo_name, "pull"])
 
-            # Full path to notebook
-            full_notebook_path = os.path.join(repo_name, NOTEBOOK_PATH)
+            # ✅ Loop through each commit in the push payload
+            for commit in payload.get("commits", []):
+                commit_url = commit.get("url")  # 🔗 GitHub commit URL
+                changed_files = commit.get("modified", []) + commit.get("added", [])
 
-            # Summarize notebook
-            print(f"🧠 Summarizing notebook: {full_notebook_path}")
-            summary = summarize_notebook(full_notebook_path)
+                for file in changed_files:
+                    if file.endswith(".ipynb"):
+                        full_path = os.path.join(repo_name, file)
+                        print(f"🧠 Summarizing: {full_path}")
+                        summary = summarize_notebook(full_path)
 
-            # Update Confluence
-            print("📤 Updating Confluence page...")
-            update_confluence(summary)
+                        notebook_name = os.path.splitext(os.path.basename(file))[0]
+                        print(f"📄 Updating Confluence page: {notebook_name}")
+                        create_or_update_page(notebook_name, summary, commit_url)
 
-            print("✅ Workflow complete: summary posted to Confluence.")
+            print("✅ All notebook pages updated.")
 
         except Exception as e:
-            print(f"❌ Error during webhook processing: {str(e)}")
+            print(f"❌ Error: {e}")
 
-    # Start the work in a background thread
     Thread(target=process_payload).start()
-
-    # Respond immediately to GitHub to avoid webhook timeout
     return jsonify({"status": "received"}), 200
 
 if __name__ == "__main__":
