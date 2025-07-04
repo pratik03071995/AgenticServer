@@ -1,7 +1,7 @@
 
 # 🧠 Agentic AI Notebook Auto-Documentation System
 
-This project is a fully automated system that listens for notebook changes in a GitHub repository and pushes AI-generated summaries to Confluence in real time.
+This project is a fully automated system that listens for notebook changes in a GitHub repository and pushes AI-generated summaries to Confluence — and now also sends an email notification after a successful update!
 
 ---
 
@@ -14,13 +14,14 @@ This project is a fully automated system that listens for notebook changes in a 
   - Summarizes code with DeepSeek LLM
   - Converts to clean HTML with headings, bullet points, and icons
   - Pushes the output to Confluence via REST API
+  - 📧 Sends an email notification with the Confluence page link
 
 ---
 
 ## 📁 Repositories
 
 - `AgenticPOC`: Contains your Jupyter/Databricks notebooks
-- `AgenticServer`: Contains the Flask app that receives webhook events, summarizes notebooks, and updates Confluence
+- `AgenticServer`: Contains the Flask app that receives webhook events, summarizes notebooks, and updates Confluence + sends emails
 
 ---
 
@@ -50,7 +51,9 @@ This project is a fully automated system that listens for notebook changes in a 
 
 6. **Push to Confluence**  
    - Confluence REST API is used to create or update a page in the desired space
-   - Summary is published for team visibility with styling and traceability
+
+7. **📧 Email Notification**  
+   - After a successful Confluence update, an email is sent with the notebook name and direct Confluence page link.
 
 ---
 
@@ -71,7 +74,8 @@ This project is a fully automated system that listens for notebook changes in a 
 ### 📂 `confluence_utils.py`
 - Converts markdown summary to Confluence HTML
 - Adds icons, TOC, info/tip blocks
-- Uses Confluence REST API to create or update a page
+- Uses Confluence REST API to create/update a page
+- **Sends email** after update
 
 ---
 
@@ -80,6 +84,7 @@ This project is a fully automated system that listens for notebook changes in a 
 - 🔗 GitHub Commit traceability
 - 📑 Confluence formatting: TOC, emojis, tip/info macros
 - 💬 Clean AI summaries using LLM
+- 📧 Email notifications after update
 - 🚫 File-not-found safety check
 - 🔄 Auto syncs local repo with GitHub pushes
 
@@ -87,62 +92,63 @@ This project is a fully automated system that listens for notebook changes in a 
 
 ## 🛠️ Setup Instructions
 
-1. Clone `AgenticServer` repo
-2. Create `.env` file with keys:
-   ```env
-   GITHUB_REPO_URL=https://github.com/yourusername/AgenticPOC.git
-   CONFLUENCE_EMAIL=your_email@example.com
-   CONFLUENCE_API_TOKEN=base64_encoded_auth
-   CONFLUENCE_BASE_URL=https://yourcompany.atlassian.net/wiki
-   CONFLUENCE_SPACE_KEY=ABC
-   OPENAI_API_KEY=...
-   DEEPSEEK_API_KEY=...
-   ```
+### 1. Clone `AgenticServer` repo
 
-3. Clone `AgenticPOC` repo into the same directory as `webhook_server.py`:
-   ```bash
-   git clone https://github.com/yourusername/AgenticPOC.git
-   ```
+### 2. Create `.env` file with:
 
-4. Start your Flask app:
-   ```bash
-   python3 webhook_server.py
-   ```
+```env
+GITHUB_REPO_URL=https://github.com/yourusername/AgenticPOC.git
+CONFLUENCE_EMAIL=your_email@example.com
+CONFLUENCE_API_TOKEN=base64_encoded_auth
+CONFLUENCE_BASE_URL=https://yourcompany.atlassian.net/wiki
+CONFLUENCE_SPACE_KEY=ABC
 
-5. Configure GitHub webhook:
-   - Payload URL: `http://yourserver:5050/webhook`
-   - Content type: `application/json`
-   - Events: `Just the push event`
+OPENAI_API_KEY=...
+DEEPSEEK_API_KEY=...
+
+# Email SMTP configuration
+EMAIL_SENDER=you@gmail.com
+EMAIL_PASSWORD=your_app_password
+EMAIL_RECEIVER=you@gmail.com
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+```
+
+> ✅ Use [Gmail App Passwords](https://support.google.com/accounts/answer/185833) instead of your regular Gmail password
+
+### 3. Clone `AgenticPOC` repo into same directory:
+```bash
+git clone https://github.com/yourusername/AgenticPOC.git
+```
+
+### 4. Start Flask app:
+```bash
+python3 webhook_server.py
+```
+
+### 5. Configure GitHub webhook:
+- Payload URL: `http://localhost:5050/webhook`
+- Content type: `application/json`
+- Events: `Just the push event`
 
 ---
 
-## 📦 Output Example in Confluence
+## 📬 Output: Email Preview
 
-```markdown
-🎯 Purpose
-- Explain what the notebook does
+**Subject:** `📄 Notebook Summary Published: guess_the_word`  
+**Body:**
+```
+✅ The notebook *guess_the_word* has been summarized and published to Confluence.
 
-🔍 Key Logic & Steps
-1. Load data from file
-2. Preprocess and clean
-3. Model training or visualization
-
-📘 Technical Audience Notes
-- Uses pandas, matplotlib, sklearn
-- JSON/CSV I/O
-
-📌 Use Case
-- Reproducible financial forecasting pipeline
-
-🔗 GitHub Commit: [view commit](https://github.com/your-repo/commit/abc123)
+🔗 View it here: https://pratik03071995.atlassian.net/wiki/spaces/NBDOCS/overview?atl_f=PAGETREE
 ```
 
 ---
 
-## 📬 Contact
+## 📘 Contact
 
 Maintainer: **Pratik**  
-Email: pratik03071995@gmail.com.com  
+Email: pratik03071995@gmail.com  
 Client: **Personal**
 
 ---
