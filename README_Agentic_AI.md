@@ -142,8 +142,8 @@ This project is a fully automated system that listens for notebook changes in a 
 ## 📬 Contact
 
 Maintainer: **Pratik**  
-Email: pratik@example.com  
-Client: **Progressive Insurance / LTIMindtree**
+Email: pratik03071995@gmail.com.com  
+Client: **Personal**
 
 ---
 
