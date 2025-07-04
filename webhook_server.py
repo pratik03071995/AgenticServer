@@ -30,12 +30,16 @@ def webhook():
                 for file in changed_files:
                     if file.endswith(".ipynb"):
                         full_path = os.path.join(repo_name, file)
-                        print(f"🧠 Summarizing: {full_path}")
-                        summary = summarize_notebook(full_path)
 
-                        notebook_name = os.path.splitext(os.path.basename(file))[0]
-                        print(f"📄 Updating Confluence page: {notebook_name}")
-                        create_or_update_page(notebook_name, summary, commit_url)
+                        if os.path.exists(full_path):
+                            print(f"🧠 Summarizing: {full_path}")
+                            summary = summarize_notebook(full_path)
+
+                            notebook_name = os.path.splitext(os.path.basename(file))[0]
+                            print(f"📄 Updating Confluence page: {notebook_name}")
+                            create_or_update_page(notebook_name, summary, commit_url)
+                        else:
+                            print(f"⚠️ File not found locally: {full_path} — skipping")
 
             print("✅ All notebook pages updated.")
 
