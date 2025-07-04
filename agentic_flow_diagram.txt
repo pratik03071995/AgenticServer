@@ -1,0 +1,25 @@
+
+You Push Notebook to AgenticPOC Repo
+        │
+        ▼
+GitHub Sends Webhook to AgenticServer (Flask App)
+        │
+        ▼
+webhook_server.py:
+- Parses payload
+- Pulls AgenticPOC repo locally
+        │
+        ▼
+For Each Changed Notebook:
+- Loads .ipynb from local disk
+- Sends code to LLM (DeepSeek)
+- Gets structured summary
+        │
+        ▼
+Format Summary:
+- Add TOC, Icons, clean HTML
+        │
+        ▼
+Push to Confluence:
+- Create or update Confluence page
+- Add GitHub commit link at bottom
